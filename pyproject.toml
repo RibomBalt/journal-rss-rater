@@ -1,0 +1,19 @@
+[project]
+name = "journal-rss-rater"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]",
+    "uvicorn",
+    "pytest",
+    "pytest-asyncio",
+    "pydantic_settings",
+    "openai",
+    "feedparser",
+    "BeautifulSoup4",
+    "PyYAML",
+    "sqlmodel",
+    "apscheduler",
+]

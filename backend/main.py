@@ -1,0 +1,207 @@
+from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi.responses import JSONResponse
+from sqlmodel import SQLModel, create_engine, Session, select
+import sqlite3
+from typing import List, Annotated
+import os
+import re
+import asyncio
+from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+from yaml import safe_load
+from functools import lru_cache
+from datetime import datetime, timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
+import logging
+
+from .models import RSSItem, RSS_Journal
+from .config import AppSettings, get_config
+from .logger import custom_logger
+from .rater.req_openai_compat import rate_all_db, rate_papers, LLMResponse
+from .rss import retrieve
+from .database import get_db_session, init_db
+from .crons import init_crons, get_cron_jobs
+from .auth.httpdigest import auth_admin, security
+
+config = get_config()
+logger = custom_logger(__name__, debug=config.DEBUG)
+
+# 加载环境变量
+# load config
+# ===================
+ConfigDep = Annotated[AppSettings, Depends(get_config)]
+# ===================
+
+
+# 数据库文件
+# TODO put this in separate module
+# ================
+SessionDep = Annotated[Session, Depends(get_db_session)]
+# ================
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """ """
+    # init database
+    init_db()
+    # scheduler
+    schedulers = init_crons()
+    app.schedulers = schedulers
+
+    yield
+
+
+app = FastAPI(lifespan=lifespan, debug=get_config().DEBUG)
+
+
+# routes
+# ================
+@app.get("/api/rss")
+def get_rss_items(
+    session: SessionDep,
+    config: ConfigDep,
+    journal: Annotated[str | None, Query(alias="j")] = None,
+    time_since: Annotated[str | None, Query(alias="s")] = None,
+    max_number: Annotated[int | None, Query(alias="n")] = 100,
+    order_by: Annotated[str | None, Query(alias="order")] = "llm_score",
+    desc: Annotated[bool, Query(alias="desc")] = True,
+):
+    """
+    Get all RSS items
+    """
+    selection = select(RSSItem)
+    # choose the journal
+    # TODO support short names
+    if journal is not None:
+        selection = selection.where(RSSItem.source == journal)
+    
+    # choose the time since
+    if time_since is not None:
+        if re.match(r'\d{4}-\d{2}-\d{2}', time_since):
+            time_since_dt = datetime.strptime(time_since, "%Y-%m-%d")
+        elif re.match(r'\d{4}-\d{2}', time_since):
+            time_since_dt = datetime.strptime(time_since, "%Y-%m")
+        elif re.match(r'\d+', time_since):
+            time_since_dt = datetime.now() - timedelta(days=int(time_since))
+        else:
+            # default to 7 days
+            time_since_dt = datetime.now() - timedelta(days=7)
+    else:
+        # default to 7 days
+        time_since_dt = datetime.now() - timedelta(days=7)
+
+    selection = selection.where(RSSItem.published >= time_since_dt)
+    # limit the number of items
+    if max_number is not None:
+        selection = selection.limit(max_number)
+    else:
+        # fallback to default number
+        selection = selection.limit(100)
+
+
+    # order by
+    if order_by is not None and order_by in RSSItem.__fields__:
+        if desc:
+            selection = selection.order_by(getattr(RSSItem, order_by).desc())
+        else:
+            selection = selection.order_by(getattr(RSSItem, order_by))
+
+    # default order by published date descending
+    selection = selection.order_by(RSSItem.published.desc())
+
+    items = session.exec(selection).all()
+
+    return items
+
+
+
+@app.get("/api/rss/update", dependencies=[Depends(auth_admin)])
+def update_rss(session: SessionDep, config: ConfigDep, journal_name: Annotated[str, Query(alias='j')] = "all", ):
+    """
+    Update from RSS sources
+    """
+    # get the journal config
+    journal_configs = config.RSS_JOURNALS
+
+    if not journal_name or journal_name in ["all", ""]:
+        target_journals = list(config.RSS_JOURNALS.keys())
+    elif journal_name in config.RSS_JOURNALS:
+        target_journals = [journal_name]
+    else:
+        raise HTTPException(status_code=404, detail="Journal not found")
+
+    all_results = {}
+    for journal_key in target_journals:
+        journal_schema = journal_configs[journal_key]
+        results = retrieve(journal_schema, session=session, update_duplicate=True)
+
+        all_results[journal_key] = results
+
+    return JSONResponse(content=all_results)
+
+@app.get("/api/rss/rate", dependencies=[Depends(auth_admin)])
+def rate_rss(
+    session: SessionDep,
+    config: ConfigDep,
+    rerate: Annotated[bool, Query(alias="force")] = False,
+    link: Annotated[str | None, Query(alias="paper")] = None,
+):
+    """
+    Rate all RSS items
+    """
+    rate_results = rate_all_db(session, config, rerate=rerate, specify_paper_link=link)
+        
+    return JSONResponse(content=rate_results)
+
+# crons
+# ================
+@app.get("/api/crons", dependencies=[Depends(auth_admin)])
+def get_cron_status():
+    """
+    Get the cron status
+    """
+    scheduler: BackgroundScheduler = app.schedulers
+    jobs = get_cron_jobs(scheduler)
+
+    return JSONResponse(content={"jobs": jobs})
+
+
+@app.get("/api/crons/{job_name}/now", dependencies=[Depends(auth_admin)])
+def trigger_cron_now(job_name: str):
+    """
+    Trigger a cron job to run now
+    """
+    scheduler: BackgroundScheduler = app.schedulers
+    jobs = get_cron_jobs(scheduler)
+
+    for job in jobs:
+        if job["id"] == job_name:
+            scheduler.get_job(job["id"]).modify(next_run_time=datetime.now())
+            return JSONResponse(content={"status": "success", "job": job})
+        
+    else:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+
+# config
+# ================
+@app.get("/api/config", dependencies=[Depends(auth_admin)])
+async def get_config(config: ConfigDep, show_secrets: bool = False):
+    """
+    Get the config
+    """
+    config_dict = config.model_dump()
+    # redact secrets
+    if not show_secrets:
+        config_dict["LLM_API"]['api_key'] = "********"
+        for key in config_dict["ADMIN_PANEL"]:
+            config_dict["ADMIN_PANEL"][key] = "********"
+
+    return JSONResponse(config_dict)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

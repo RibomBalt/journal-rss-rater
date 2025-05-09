@@ -1,0 +1,46 @@
+# This file defines how RSS fields correspond to the database fields.
+# two mandatory string fields: url and source
+# - url: the RSS feed URL
+# - source: name of the source, used to identify the feed (Journal name)
+# other fields defined as follow:
+# - null: empty field, use default value
+# - direct strings: getattr
+# - dict with content: use content as str
+# - dict with datestr/format: use format to parse the date
+# if omitted, means use the same name as the field in the database
+pop:
+  feed: "https://pubs.aip.org/rss/site_1000039/1000022.xml"
+  source: "Physics of Plasmas"
+
+  authors: null
+  affiliation: null
+  published: 
+    datestr: "published"
+    format: "%a, %d %b %Y %H:%M:%S %Z"
+
+apj:
+  feed: "http://iopscience.iop.org/journal/rss/0004-637X"
+  source: "The Astrophysical Journal"
+  affiliation: null
+  authors: author
+  published: 
+    datestr: "updated"
+    format: "%Y-%m-%dT%H:%M:%SZ"
+
+ncomms-earth:
+  feed: "https://www.nature.com/subjects/earth-and-environmental-sciences/ncomms.rss"
+  source: "Nature Communications (Earth and Environmental Sciences)"
+  authors: null
+  affiliation: null
+  published: 
+    datestr: "published"
+    format: "%a, %d %b %Y %H:%M:%S %z"
+
+space-science-reviews:
+  feed: "https://link.springer.com/search.rss?query=&search-within=Journal&facet-journal-id=11214"
+  source: "Space Science Reviews"
+  authors: null
+  affiliation: null
+  published:
+    datestr: "published"
+    format: "%Y-%m-%d"

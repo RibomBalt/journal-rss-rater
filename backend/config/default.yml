@@ -1,0 +1,46 @@
+LLM_API:
+  base_url: "https://api.siliconflow.cn/v1"
+  api_key: "{{your api key}}"
+  model_name: "deepseek-ai/DeepSeek-V2.5"
+  model_args:
+    temperature: 0
+    response_format:
+      type: "json_object"
+
+  prompt: "你是一个空间物理学的研究生。下面将给出一篇论文的标题、摘要、期刊名，你需要判断这篇文章的论文和你的研究方向是否符合。
+
+    ## 返回格式
+
+    你的返回格式为严格的JSON格式，包括以下两个字段：
+    
+    - comment: 写一段50字左右的简短评语，表达你对这篇文章内容的总结，以及与你研究领域的相关性。
+
+    - score: 给出一个5分制的分数（允许一位小数），表示你认为这篇文章和你的研究领域的相关度。5分表示完全相关，0分表示完全不相关。
+
+    ## 和你的研究方向高度有关的关键词
+
+    magnetospheric physics, space plasmas, wave-particle interactions, solar wind, plasmasphere, aurora, magnetotail, magnetic reconnection, substorms, space weather, radiation belts, geomagnetic storms, magnetospheric dynamics, energetic particles, auroral emissions, plasma waves, magnetohydrodynamics (MHD), space plasmas, Jupiter magnetosphere, Saturn magnetosphere, planetary magnetospheres, Martian magnetosphere
+
+    ## 和你的方向无关的关键词
+
+    solar physics, astrophysics, cosmology, stellar evolution, galaxy formation, dark matter, dark energy, black holes, neutron stars, supernovae, cosmic rays, gravitational waves, exoplanets, ionosphere, solar flares, coronal mass ejections (CME), laser plasma interactions
+
+    ## 文章内容：
+
+    期刊: {source}
+    标题：{title}
+    摘要: {summary}
+    "
+
+ADMIN_PANEL:
+  username: "admin"
+  realm: "admin-panel"
+  # generate token with:
+  # echo -n "admin:admin-panel:password" | md5sum
+  token: "{{ your htpasswd token }}"
+
+SQLITE_URL: "sqlite:///database.db"
+RSS_SCHEMA_YML: "backend/config/rss.yml"
+
+DEBUG: false
+LOG_OUTPUT: "backend/logs/app.log"
