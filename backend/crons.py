@@ -57,3 +57,12 @@ def get_cron_jobs(scheduler: BackgroundScheduler):
         })
         jobs.append(job_info.model_dump(mode='json'))
     return jobs
+
+def manual_cron(scheduler: BackgroundScheduler, job_id: str):
+    """Manually run a cron job"""
+    job = scheduler.get_job(job_id)
+    if job:
+        job.modify(next_run_time=datetime.now())
+        logger.info(f"Manually run cron job {job.name} completed.")
+    else:
+        logger.error(f"Cron job {job_id} not found.")

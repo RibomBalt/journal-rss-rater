@@ -1,5 +1,4 @@
 py_venv
-frontend
 
 database.db
 logs
@@ -14,3 +13,4 @@ uv.lock
 .vscode
 
 ref
+tmp

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import SQLModel, create_engine, Session, select
 import sqlite3
 from typing import List, Annotated
@@ -52,7 +53,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan, debug=get_config().DEBUG)
+app = FastAPI(
+    lifespan=lifespan,
+    debug=get_config().DEBUG,
+    title="RSS API",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
 
 
 # routes
@@ -115,6 +123,26 @@ def get_rss_items(
     return items
 
 
+@app.get("/api/rss/sources")
+def get_rss_journals(config: ConfigDep):
+    """
+    """
+    journals = [j.model_dump(mode='json') for j in config.RSS_JOURNALS.values()]
+
+    return JSONResponse(content=journals)
+
+@app.get("/api/rss/llm_prompt")
+def get_llm_prompt(config: ConfigDep):
+    """
+    Get the LLM prompt
+    """
+    llm_prompt = config.LLM_API.model_dump(mode='json')
+    # remove the api key
+    llm_prompt['api_key'] = "********"
+    return JSONResponse(content=llm_prompt)
+
+
+
 
 @app.get("/api/rss/update", dependencies=[Depends(auth_admin)])
 def update_rss(session: SessionDep, config: ConfigDep, journal_name: Annotated[str, Query(alias='j')] = "all", ):
@@ -156,7 +184,7 @@ def rate_rss(
 
 # crons
 # ================
-@app.get("/api/crons", dependencies=[Depends(auth_admin)])
+@app.get("/api/crons")
 def get_cron_status():
     """
     Get the cron status
@@ -187,7 +215,7 @@ def trigger_cron_now(job_name: str):
 # config
 # ================
 @app.get("/api/config", dependencies=[Depends(auth_admin)])
-async def get_config(config: ConfigDep, show_secrets: bool = False):
+async def get_config_web(config: ConfigDep, show_secrets: bool = False):
     """
     Get the config
     """
@@ -200,8 +228,22 @@ async def get_config(config: ConfigDep, show_secrets: bool = False):
 
     return JSONResponse(config_dict)
 
+# mount the frontend
+app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
-if __name__ == "__main__":
+
+def start_server():
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    config = get_config()
+    uvicorn.run(
+        "backend.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=config.DEBUG,
+        log_level=logging.DEBUG if config.DEBUG else logging.INFO,
+    )
+
+
+if __name__ == "__main__":
+    start_server()
