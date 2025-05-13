@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import Datepicker from '@vuepic/vue-datepicker';
+import StarRate from './StarRate.vue'
+import '@vuepic/vue-datepicker/dist/main.css';
 import { useRoute } from 'vue-router'
 // import RSSItem from '../datamodels/RSSItem'
 import axios from 'axios'
@@ -11,6 +14,8 @@ let max_number = computed(() => {
 });
 // const max_number = (route && route.query.max_number) ? parseInt(route.query.max_number as string) : 100;
 // const max_number = 100; // default value
+
+const date_selected = ref();
 
 const BASE_URL = ""
 const RSS_API = `${BASE_URL}/api/rss?max_number=${max_number.value}`;
@@ -103,6 +108,10 @@ onMounted(async () => {
 
 <template>
   <div>
+    <Datepicker v-model="date_selected" />
+  </div>
+
+  <div>
     <table>
       <thead>
         <tr>
@@ -124,7 +133,7 @@ onMounted(async () => {
             <div :class="{ 'shrink-height': item.style.shrink_comment }" @click="toggleCommentShrink(item)">{{
               item.data.llm_comments }}</div>
           </td>
-          <td>{{ item.data.llm_score }}</td>
+          <td><StarRate v-model.number="item.data.llm_score" /></td>
         </tr>
       </tbody>
     </table>
