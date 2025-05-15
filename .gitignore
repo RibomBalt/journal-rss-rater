@@ -1,7 +1,6 @@
 py_venv
 
 database.db
-logs
 
 __pycache__
 .pytest_cache

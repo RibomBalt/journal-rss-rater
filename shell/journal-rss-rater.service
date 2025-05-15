@@ -1,0 +1,16 @@
+[Unit]
+Description=Journal-RSS-Rater
+After=syslog.target
+After=network.target
+
+[Service]
+RestartSec=30s
+Type=simple
+User=journal-rss-rater
+Group=journal-rss-rater
+WorkingDirectory=/home/yangfan/apps/journal-rss-rater
+ExecStart=/home/yangfan/apps/journal-rss-rater/.venv/bin/python -m backend.main
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
