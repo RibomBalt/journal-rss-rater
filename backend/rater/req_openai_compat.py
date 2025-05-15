@@ -56,12 +56,12 @@ def rate_papers(papers: list[RSSItem], config: AppSettings, rerate: bool = False
     for ipaper, paper in enumerate(papers):
         if not rerate and paper.llm_score is not None:
             # This paper is already rated
-            logger.info(f"Paper #{ipaper}: {paper.link} already rated, skipping")
+            logger.debug(f"Paper #{ipaper}: {paper.link} already rated, skipping")
             continue
 
-        logger.info(f"Rating paper #{ipaper}: {paper.link}")
+        logger.debug(f"Rating paper #{ipaper}: {paper.link}")
         resp = get_openai_response(paper, config)
-        logger.info(f"Rating Response: {resp}")
+        logger.debug(f"Rating Response: {resp}")
         paper.llm_comments = resp.comment
         paper.llm_score = resp.score
         rated_papers.append(paper)

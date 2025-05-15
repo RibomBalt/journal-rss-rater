@@ -9,7 +9,7 @@ import re
 import asyncio
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from yaml import safe_load
+from yaml import safe_load, YAMLError
 from functools import lru_cache
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -235,13 +235,23 @@ app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend
 def start_server():
     import uvicorn
 
+    try:
+        with open("backend/config/logging.yml", "r") as f:
+            log_config = safe_load(f.read())
+
+    except (FileNotFoundError, YAMLError) as err:
+        logger.warning("Logging config file not found. Using default config.")
+        log_config = None
+
+
     config = get_config()
     uvicorn.run(
         "backend.main:app",
         host="127.0.0.1",
         port=8000,
         reload=config.DEBUG,
-        log_level=logging.DEBUG if config.DEBUG else logging.INFO,
+        # log_level=logging.DEBUG if config.DEBUG else logging.INFO,
+        log_config=log_config
     )
 
 

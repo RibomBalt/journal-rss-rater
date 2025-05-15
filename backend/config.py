@@ -45,7 +45,9 @@ class AppSettings(BaseSettings):
     SQLITE_URL: str = "sqlite:///database.db"
     RSS_SCHEMA_YML: str = "backend/config/rss.yml"
     DEBUG: bool = False
-    LOG_OUTPUT: str = "backend/logs/app.log"
+
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
 
     RSS_JOURNALS: dict[str, RSS_Journal] = {}
 
