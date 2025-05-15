@@ -16,7 +16,13 @@
                 <span></span>
             </div>
         </div>
+        <br />
+        <div class="score">
+            <span v-if="score !== null" class="score">{{ score }}</span>
+            <span v-else class="score">N/A</span>
+        </div>
     </div>
+   
 </template>
 
 <script setup lang="ts">
@@ -26,7 +32,11 @@ const score = defineModel<number | null>();
 
 const score_width = computed(() => {
     const score_value = score.value ?? 0;
-    return (score_value / 5 * 100).toString() + '%';
+    // 16px + margin-right 4px
+    const star_width = 16;
+    const star_margin = 4;
+
+    return ((Math.floor(score_value) * star_margin + score_value * star_width) / (5 * star_width + 5 * star_margin) * 100).toString() + '%';
 });
 
 </script>
@@ -36,7 +46,7 @@ const score_width = computed(() => {
 .root {
     position: relative;
     display: inline-block;
-    min-width: 96px;
+    min-width: 100px;
 }
 
 .star-wrap span {
@@ -64,4 +74,26 @@ const score_width = computed(() => {
     overflow: hidden;
     width: v-bind(score_width);
 }
+
+.root .score {
+    opacity: 0;
+    transition: opacity 0.3s;
+
+    width: 50%;
+    background-color: #1a2b30;
+    color: #fff;
+    text-align: center;
+    padding: 0px 0;
+    border-radius: 6px;
+    
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 1;
+}
+
+.root:hover .score {
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
 </style>

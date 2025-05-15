@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import RSSTable from './components/RSSTable.vue';
-import RSSSources from './components/RSSSources.vue';
+// import RSSSources from './components/RSSSources.vue';
 </script>
 
 <template>
@@ -11,12 +11,13 @@ import RSSSources from './components/RSSSources.vue';
   <div>
     <p>
     <blockquote><a href="/api/rss/llm_prompt">See Prompts</a></blockquote>
+    <blockquote><a href="/api/rss/sources">See RSS Sources</a></blockquote>
     </p>
   </div>
 
-  <div>
+  <!-- <div>
     <RSSSources />
-  </div>
+  </div> -->
 
   <div>
     <RSSTable />

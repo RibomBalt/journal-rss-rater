@@ -1,8 +1,4 @@
 <template>
-    <!-- <div>
-        <p>LLM Prompts</p>
-        <p>{{ llm_prompts }}</p>
-    </div> -->
     <div v-if="journals.length > 0" class="rss-all-items">
         <div v-for="journal in journals" :key="journal.source" class="rss-item">
             <a :href="journal.feed" target="_blank">{{ journal.source }}</a>

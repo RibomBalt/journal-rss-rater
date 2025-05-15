@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import SQLModel, create_engine, Session, select
+from sqlmodel import SQLModel, create_engine, Session, select, or_
 import sqlite3
 from typing import List, Annotated
 import os
@@ -69,10 +69,11 @@ app = FastAPI(
 def get_rss_items(
     session: SessionDep,
     config: ConfigDep,
-    journal: Annotated[str | None, Query(alias="j")] = None,
-    time_since: Annotated[str | None, Query(alias="s")] = None,
-    max_number: Annotated[int | None, Query(alias="n")] = 100,
-    order_by: Annotated[str | None, Query(alias="order")] = "llm_score",
+    journal: Annotated[list[str] | None, Query(alias="journal")] = None,
+    time_since: Annotated[str | None, Query(alias="time_since")] = None,
+    time_until: Annotated[str | None, Query(alias="time_until")] = None,
+    max_number: Annotated[int | None, Query(alias="max_number")] = 100,
+    order_by: Annotated[str | None, Query(alias="order_by")] = "llm_score",
     desc: Annotated[bool, Query(alias="desc")] = True,
 ):
     """
@@ -82,24 +83,35 @@ def get_rss_items(
     # choose the journal
     # TODO support short names
     if journal is not None:
-        selection = selection.where(RSSItem.source == journal)
-    
-    # choose the time since
-    if time_since is not None:
-        if re.match(r'\d{4}-\d{2}-\d{2}', time_since):
-            time_since_dt = datetime.strptime(time_since, "%Y-%m-%d")
-        elif re.match(r'\d{4}-\d{2}', time_since):
-            time_since_dt = datetime.strptime(time_since, "%Y-%m")
-        elif re.match(r'\d+', time_since):
-            time_since_dt = datetime.now() - timedelta(days=int(time_since))
+        selection = selection.where(or_(RSSItem.source == j for j in journal))
+    # if journal is not provided, get all journals
+
+    def parse_date(time_since: str, default: datetime) -> datetime:
+        # choose the time since
+        if time_since is not None:
+            if re.match(r'\d{4}-\d{2}-\d{2}', time_since):
+                time_since_dt = datetime.strptime(time_since, "%Y-%m-%d")
+            elif re.match(r'\d{4}-\d{2}', time_since):
+                time_since_dt = datetime.strptime(time_since, "%Y-%m")
+            elif re.match(r'\d+', time_since):
+                if int(time_since) < 1e8:
+                    # if the time since is less than 1e8, treat it as days
+                    time_since_dt = datetime.now() - timedelta(days=int(time_since))
+                else:
+                    # if the time since is greater than 1e8, treat it as timestamp
+                    time_since_dt = datetime.fromtimestamp(int(time_since))
+            else:
+                # default to 7 days
+                time_since_dt = datetime.now() - timedelta(days=7)
         else:
             # default to 7 days
-            time_since_dt = datetime.now() - timedelta(days=7)
-    else:
-        # default to 7 days
-        time_since_dt = datetime.now() - timedelta(days=7)
+            time_since_dt = default
+        return time_since_dt
+    
+    time_since_dt = parse_date(time_since, datetime.now() - timedelta(days=7))
+    time_until_dt = parse_date(time_until, datetime.now())
 
-    selection = selection.where(RSSItem.published >= time_since_dt)
+    selection = selection.where(RSSItem.published >= time_since_dt).where(RSSItem.published <= time_until_dt)
     # limit the number of items
     if max_number is not None:
         selection = selection.limit(max_number)
