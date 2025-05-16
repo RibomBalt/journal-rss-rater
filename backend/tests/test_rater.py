@@ -32,6 +32,7 @@ def test_get_llm_response(example_paper):
 
     resp = get_openai_response(example_paper, config)
 
+    print(example_paper)
     print(resp)
     assert isinstance(resp, LLMResponse)
 
