@@ -57,9 +57,9 @@ app = FastAPI(
     lifespan=lifespan,
     debug=get_config().DEBUG,
     title="RSS API",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    docs_url=f"{config.BASE_URL}/api/docs",
+    redoc_url=f"{config.BASE_URL}/api/redoc",
+    openapi_url=f"{config.BASE_URL}/api/openapi.json",
 )
 
 router = APIRouter()
