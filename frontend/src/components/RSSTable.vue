@@ -284,6 +284,7 @@ a {
 th,
 td {
   border: 1px solid #ccc;
+  color: white;
 }
 
 th {
