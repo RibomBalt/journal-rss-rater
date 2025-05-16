@@ -48,6 +48,7 @@ class AppSettings(BaseSettings):
 
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+    BASE_URL: str = "/"
 
     RSS_JOURNALS: dict[str, RSS_Journal] = {}
 

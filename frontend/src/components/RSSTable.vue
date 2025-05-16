@@ -8,8 +8,8 @@ import axios from 'axios'
 
 // let route = useRoute();
 
-
-const BASE_URL = ""
+// TODO: use dotenv or something to set the base URL
+const BASE_URL = window.location.pathname.replace(/\/+$/, '');
 const RSS_API = `${BASE_URL}/api/rss`;
 
 interface RSSStyle {
@@ -119,7 +119,7 @@ async function fetchRSSItems(max_number: Number, timestamp_range: number[]) {
 
 async function fetchRSSSources() {
   try {
-    const response = await axios.get<RSSSource[]>('/api/rss/sources');
+    const response = await axios.get<RSSSource[]>(`${RSS_API}/sources`);
     selected_journals.value = response.data.map(item => {
       return {
         ...item,

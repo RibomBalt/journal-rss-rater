@@ -1,3 +1,3 @@
 #!/bin/bash
 cd frontend
-yarn build
+yarn build --base="/rss"

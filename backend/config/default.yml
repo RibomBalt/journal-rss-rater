@@ -47,3 +47,4 @@ LOG_OUTPUT: "backend/logs/app.log"
 
 HOST: "127.0.0.1"
 PORT: 8000
+BASE_URL: /

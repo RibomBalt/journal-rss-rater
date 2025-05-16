@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import SQLModel, create_engine, Session, select, or_
@@ -62,10 +62,11 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
+router = APIRouter()
 
 # routes
 # ================
-@app.get("/api/rss")
+@router.get("/api/rss")
 def get_rss_items(
     session: SessionDep,
     config: ConfigDep,
@@ -135,7 +136,7 @@ def get_rss_items(
     return items
 
 
-@app.get("/api/rss/sources")
+@router.get("/api/rss/sources")
 def get_rss_journals(config: ConfigDep):
     """
     """
@@ -143,7 +144,7 @@ def get_rss_journals(config: ConfigDep):
 
     return JSONResponse(content=journals)
 
-@app.get("/api/rss/llm_prompt")
+@router.get("/api/rss/llm_prompt")
 def get_llm_prompt(config: ConfigDep):
     """
     Get the LLM prompt
@@ -156,7 +157,7 @@ def get_llm_prompt(config: ConfigDep):
 
 
 
-@app.get("/api/rss/update", dependencies=[Depends(auth_admin)])
+@router.get("/api/rss/update", dependencies=[Depends(auth_admin)])
 def update_rss(session: SessionDep, config: ConfigDep, journal_name: Annotated[str, Query(alias='j')] = "all", ):
     """
     Update from RSS sources
@@ -180,7 +181,7 @@ def update_rss(session: SessionDep, config: ConfigDep, journal_name: Annotated[s
 
     return JSONResponse(content=all_results)
 
-@app.get("/api/rss/rate", dependencies=[Depends(auth_admin)])
+@router.get("/api/rss/rate", dependencies=[Depends(auth_admin)])
 def rate_rss(
     session: SessionDep,
     config: ConfigDep,
@@ -196,7 +197,7 @@ def rate_rss(
 
 # crons
 # ================
-@app.get("/api/crons")
+@router.get("/api/crons")
 def get_cron_status():
     """
     Get the cron status
@@ -207,7 +208,7 @@ def get_cron_status():
     return JSONResponse(content={"jobs": jobs})
 
 
-@app.get("/api/crons/{job_name}/now", dependencies=[Depends(auth_admin)])
+@router.get("/api/crons/{job_name}/now", dependencies=[Depends(auth_admin)])
 def trigger_cron_now(job_name: str):
     """
     Trigger a cron job to run now
@@ -226,7 +227,7 @@ def trigger_cron_now(job_name: str):
 
 # config
 # ================
-@app.get("/api/config", dependencies=[Depends(auth_admin)])
+@router.get("/api/config", dependencies=[Depends(auth_admin)])
 async def get_config_web(config: ConfigDep, show_secrets: bool = False):
     """
     Get the config
@@ -241,8 +242,8 @@ async def get_config_web(config: ConfigDep, show_secrets: bool = False):
     return JSONResponse(config_dict)
 
 # mount the frontend
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
-
+app.include_router(router, tags=["api"], prefix=config.BASE_URL)
+app.mount(config.BASE_URL, StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
 def start_server():
     import uvicorn
