@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import RSSTable from './components/RSSTable.vue';
+import { ref } from 'vue';
 // import RSSSources from './components/RSSSources.vue';
+
+const BASE_URL = window.location.pathname.replace(/\/+$/, '');
+const RSS_LLM_PROMPT_API = ref(`${BASE_URL}/api/rss/llm_prompt`);
+const RSS_SOURCES_API = ref(`${BASE_URL}/api/rss/sources`);
+
 </script>
 
 <template>
@@ -10,8 +16,8 @@ import RSSTable from './components/RSSTable.vue';
 
   <div>
     <p>
-    <blockquote><a href="/api/rss/llm_prompt">See Prompts</a></blockquote>
-    <blockquote><a href="/api/rss/sources">See RSS Sources</a></blockquote>
+    <blockquote><a :href="RSS_LLM_PROMPT_API">See Prompts</a></blockquote>
+    <blockquote><a :href="RSS_SOURCES_API">See RSS Sources</a></blockquote>
     </p>
   </div>
 
