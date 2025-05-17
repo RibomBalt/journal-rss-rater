@@ -191,7 +191,7 @@ watch([
       <div v-if="selected_journals.length > 0" class="rss-source-item-box">
         <label>Journals</label>
         <div v-for="journal in selected_journals" :key="journal.source" :class="{'rss-source-item': true, 'rss-source-item-box-activate': journal.show }" @click="toggleJournalShow(journal)">
-          <p>{{ journal.source }}</p>
+          <p>{{ journal.source }} <a :href="journal.feed">🔗</a></p>
         </div>
       </div>
 

@@ -85,7 +85,13 @@ def get_rss_items(
     # TODO support short names
     if journal is not None:
         selection = selection.where(or_(RSSItem.source == j for j in journal))
-    # if journal is not provided, get all journals
+    else:
+        # if journal is not provided, get all provided in the config
+        # NOTE: if journal are removed from rss.yml, but paper are still in db
+        # we decide to return only journals that are activated in the config
+        all_journals = [j.source for j in config.RSS_JOURNALS.values()]
+        selection = selection.where(RSSItem.source.in_(all_journals))
+
 
     def parse_date(time_since: str, default: datetime) -> datetime:
         # choose the time since

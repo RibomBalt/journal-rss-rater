@@ -27,9 +27,18 @@ apj:
     datestr: "updated"
     format: "%Y-%m-%dT%H:%M:%SZ"
 
-ncomms-earth:
-  feed: "https://www.nature.com/subjects/earth-and-environmental-sciences/ncomms.rss"
-  source: "Nature Communications (Earth and Environmental Sciences)"
+# ncomms-earth:
+#   feed: "https://www.nature.com/subjects/earth-and-environmental-sciences/ncomms.rss"
+#   source: "Nature Communications (Earth and Environmental Sciences)"
+#   authors: null
+#   affiliation: null
+#   published: 
+#     datestr: "published"
+#     format: "%a, %d %b %Y %H:%M:%S %z"
+
+ncomms-space:
+  feed: "https://www.nature.com/subjects/space-physics/ncomms.rss"
+  source: "Nature Communications (Space Physics)"
   authors: null
   affiliation: null
   published: 
