@@ -1,5 +1,6 @@
-from openai import OpenAI
-from ..models import RSSItem
+# from openai import OpenAI
+import httpx
+from ..models import RSSItem, AllowExtraModel
 from ..config import AppSettings, LLM_Config, get_config
 from sqlmodel import Session, select
 from pydantic import BaseModel, ValidationError
@@ -12,6 +13,26 @@ class LLMResponse(BaseModel):
     comment: str
     score: float | None
 
+class SiliconflowMessageScheme(AllowExtraModel):
+    role: str
+    content: str
+
+class SiliconflowChoiceScheme(AllowExtraModel):
+    message: SiliconflowMessageScheme
+    finish_reason: str
+
+class SiliconflowUsageScheme(AllowExtraModel):
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+class SiliconflowResponseScheme(AllowExtraModel):
+    id: str
+    choices: list[SiliconflowChoiceScheme]
+    model: str
+    object: str
+    usage: SiliconflowUsageScheme
+
 
 def generate_prompt(paper: RSSItem, llm_config: LLM_Config):
     """
@@ -23,6 +44,44 @@ def generate_prompt(paper: RSSItem, llm_config: LLM_Config):
     return prompt
 
 
+def request_llm_response(prompt: str, llm_config: LLM_Config):
+    """
+    Request the LLM response based on httpx client
+    """
+    url = llm_config.base_url + "/chat/completions"
+    messages = [
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+
+    payload = dict(model=llm_config.model_name, messages=messages, **llm_config.model_args)
+    
+    headers = {
+        "Authorization": f"Bearer {llm_config.api_key}",
+        "Content-Type": "application/json"
+    }
+
+    resp = httpx.request(
+        "POST",
+        url,
+        headers=headers,
+        json=payload,
+        timeout=60,
+    )
+
+    if resp.status_code != 200:
+        logger.warning(f"OpenAI API request failed: {resp.status_code}, {resp.text}")
+        raise httpx.HTTPStatusError(f"OpenAI API request failed: {resp.status_code}, {resp.text}")
+
+    # TODO validate 
+    resp_json = resp.json()
+    resp_obj = SiliconflowResponseScheme.model_validate(resp_json)
+
+    return resp_obj
+
+
 def get_openai_response(paper: RSSItem, config: AppSettings):
     """
     Get the response from OpenAI API
@@ -31,12 +90,13 @@ def get_openai_response(paper: RSSItem, config: AppSettings):
     llm_config = config.LLM_API
     prompt = generate_prompt(paper, llm_config)
 
-    client = OpenAI(api_key=llm_config.api_key, base_url=llm_config.base_url)
-    resp_raw: str = client.chat.completions.create(
-        model=llm_config.model_name,
-        messages=[{"role": "user", "content": prompt}],
-        **llm_config.model_args,
-    )
+    # client = OpenAI(api_key=llm_config.api_key, base_url=llm_config.base_url)
+    # resp_raw: str = client.chat.completions.create(
+    #     model=llm_config.model_name,
+    #     messages=[{"role": "user", "content": prompt}],
+    #     **llm_config.model_args,
+    # )
+    resp_raw = request_llm_response(prompt, llm_config)
     logger.debug(f"OpenAI response: {resp_raw}")
     resp_msg = resp_raw.choices[0].message.content
 
