@@ -92,10 +92,11 @@ def retrieve(journal: RSS_Journal, session: Session | None = None, update_duplic
                         )
                         pass
                 else:
-                    logger.info(f"Adding new item to database: {item.link}, {item.uuid}")
+                    logger.debug(f"Adding new item to database: {item.link}, {item.uuid}")
                     new_links.append(item.link)
                     session.add(item)
 
+            logger.info(f"New items: {len(new_links)} added to database")
             session.commit()
 
             return {"all": all_links, "new": new_links, "existing": existing_links}
