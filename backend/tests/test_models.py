@@ -3,7 +3,7 @@ from ..models import (RSS_Journal, RSSItem)
 from ..rss import retrieve
 from yaml import safe_load
 
-RSS_YAML_PATH = "backend/rss/rss.yml"
+RSS_YAML_PATH = "backend/config/rss.yml"
 
 def test_rss_yaml():
     """

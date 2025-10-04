@@ -53,3 +53,12 @@ space-science-reviews:
   published:
     datestr: "published"
     format: "%Y-%m-%d"
+
+agu-advances:
+  feed: "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=2576604x&type=etoc&feed=rss"
+  source: "AGU Advances"
+  authors: null
+  affiliation: null
+  published:
+    datestr: "published"
+    format: "%a, %d %b %Y %H:%M:%S %z"

@@ -55,3 +55,23 @@ def test_ncomms_rss():
     # Basic assertions to validate feed structure
     assert feed.status == 200
     assert len(feed.entries) > 0
+
+
+
+def test_aguadvns_rss():
+    url = "https://agupubs.onlinelibrary.wiley.com/action/showFeed?jc=2576604x&type=etoc&feed=rss"
+    feed = feedparser.parse(url)
+
+    # Print feed info to console
+    print("\nFeed Title:", feed.feed.title)
+    print(f"Feed Entries: total={len(feed.entries)}")
+    for entry in feed.entries[:1]:
+        print(f"- {entry.id} {entry.title} ({entry.link})")
+        print(f"  {entry.authors}")
+        print(f"  {entry.summary}")
+        print(f"  {entry.published}")
+        print(f"  {entry.keys()}")
+
+    # Basic assertions to validate feed structure
+    assert feed.status == 200
+    assert len(feed.entries) > 0
