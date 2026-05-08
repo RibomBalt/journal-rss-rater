@@ -14,6 +14,7 @@ from functools import lru_cache
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
+import mimetypes
 
 from .models import RSSItem, RSS_Journal
 from .config import AppSettings, get_config
@@ -248,6 +249,9 @@ async def get_config_web(config: ConfigDep, show_secrets: bool = False):
     return JSONResponse(config_dict)
 
 # mount the frontend
+mimetypes.add_type("application/javascript", ".js", True)
+mimetypes.add_type("application/javascript", ".mjs", True)
+
 app.include_router(router, tags=["api"], prefix=config.BASE_URL)
 app.mount(config.BASE_URL, StaticFiles(directory="frontend/dist", html=True), name="frontend")
 

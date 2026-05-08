@@ -5,6 +5,7 @@ from ..config import AppSettings, LLM_Config, get_config
 from sqlmodel import Session, select
 from pydantic import BaseModel, ValidationError
 from ..logger import custom_logger
+from typing import Sequence
 
 config = get_config()
 logger = custom_logger(__name__, debug=config.DEBUG)
@@ -87,6 +88,8 @@ def get_openai_response(paper: RSSItem, config: AppSettings):
     Get the response from OpenAI API
     TODO try-except
     """
+    logger.info(f"Getting LLM response for paper: {paper.title}")
+
     llm_config = config.LLM_API
     prompt = generate_prompt(paper, llm_config)
 
@@ -105,12 +108,12 @@ def get_openai_response(paper: RSSItem, config: AppSettings):
     except ValidationError as err:
         logger.warning(f"Validation error: {err}, response: {resp_msg}")
 
-        return {"comment": resp_msg, "score": None}
+        return LLMResponse(comment=resp_msg, score=None)
 
     return resp
 
 
-def rate_papers(papers: list[RSSItem], config: AppSettings, rerate: bool = False, session: Session = None):
+def rate_papers(papers: Sequence[RSSItem], config: AppSettings, rerate: bool = False, session: Session | None = None):
     """ """
     rated_papers = []
     for ipaper, paper in enumerate(papers):
@@ -133,7 +136,7 @@ def rate_papers(papers: list[RSSItem], config: AppSettings, rerate: bool = False
     return papers
 
 
-def rate_all_db(session: Session, config: AppSettings, rerate: bool = False, specify_paper_link: str = None):
+def rate_all_db(session: Session, config: AppSettings, rerate: bool = False, specify_paper_link: str | None = None):
     """
     Rate all papers in the database
     """

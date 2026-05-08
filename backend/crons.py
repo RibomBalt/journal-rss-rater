@@ -29,6 +29,8 @@ def cron_retreive():
 
 def cron_rate():
     """Cron job to rate papers"""
+    logger.info("Cron job to rate papers started.")
+
     config = get_config()
     with contextmanager(get_db_session)() as session:
         rate_all_db(session, config, rerate=False)

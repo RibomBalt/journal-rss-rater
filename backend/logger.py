@@ -14,7 +14,7 @@ def custom_logger(logger_name, debug=False):
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
     # create file handler that logs debug and higher level messages
-    fh = logging.FileHandler(config.LOG_OUTPUT)
+    fh = logging.FileHandler(config.LOG_OUTPUT, encoding='utf-8')
     fh.setLevel(logging.DEBUG if config.DEBUG else logging.INFO)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
